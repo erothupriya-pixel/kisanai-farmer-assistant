@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🌾 KisanAI — AI Voice Based Farmer Assistant
 
 A full-stack Django web application that provides AI-powered agricultural advice to farmers in **Telugu, Hindi, and English** using voice and text.
@@ -290,3 +291,6 @@ MIT License — Free for personal and commercial use.
 
 Built with ❤️ for Indian Farmers  
 Powered by Django · Google Gemini · Web Speech API
+=======
+# kisanai-farmer-assistant
+>>>>>>> ac004e361c0a6e8d6b7936170ce00acba6e1d123
