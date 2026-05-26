@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}KisanAI — Smart Farmer Assistant{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Sans+Telugu:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <span class="brand-icon">🌾</span>
+      <span class="brand-text">KisanAI</span>
+    </a>
+
+    {% if user.is_authenticated %}
+    <div class="nav-links">
+      <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-th-large"></i><span>Dashboard</span>
+      </a>
+      <a href="{% url 'voice_assistant' %}" class="nav-link {% if request.resolver_match.url_name == 'voice_assistant' %}active{% endif %}">
+        <i class="fas fa-microphone"></i><span>Voice AI</span>
+      </a>
+      <a href="{% url 'chat' %}" class="nav-link {% if 'chat' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fas fa-comments"></i><span>Chat</span>
+      </a>
+    </div>
+    <div class="nav-user">
+      <a href="{% url 'profile' %}" class="nav-avatar" title="{{ user.username }}">
+        <i class="fas fa-user-circle"></i>
+        <span class="nav-username">{{ user.username }}</span>
+      </a>
+      <a href="{% url 'logout' %}" class="nav-logout" title="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+    {% else %}
+    <div class="nav-links">
+      <a href="{% url 'login' %}" class="nav-link">Login</a>
+      <a href="{% url 'register' %}" class="btn-nav-cta">Get Started</a>
+    </div>
+    {% endif %}
+
+    <button class="nav-hamburger" id="navToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+{% if user.is_authenticated %}
+<div class="mobile-menu" id="mobileMenu">
+  <a href="{% url 'dashboard' %}"><i class="fas fa-th-large"></i> Dashboard</a>
+  <a href="{% url 'voice_assistant' %}"><i class="fas fa-microphone"></i> Voice AI</a>
+  <a href="{% url 'chat' %}"><i class="fas fa-comments"></i> Chat</a>
+  <a href="{% url 'chat_history' %}"><i class="fas fa-history"></i> History</a>
+  <a href="{% url 'profile' %}"><i class="fas fa-user"></i> Profile</a>
+  <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+{% endif %}
+
+<!-- Messages -->
+{% if messages %}
+<div class="toast-container" id="toastContainer">
+  {% for message in messages %}
+  <div class="toast toast-{{ message.tags }}" data-auto-dismiss>
+    <i class="fas {% if 'success' in message.tags %}fa-check-circle{% elif 'error' in message.tags %}fa-times-circle{% else %}fa-info-circle{% endif %}"></i>
+    <span>{{ message }}</span>
+    <button onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

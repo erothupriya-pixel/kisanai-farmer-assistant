@@ -1,0 +1,134 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Voice Assistant — KisanAI{% endblock %}
+{% block body_class %}app-page voice-page{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      <div class="user-avatar-big"><i class="fas fa-user-circle"></i></div>
+      <div class="user-info">
+        <h3>{{ user.username }}</h3>
+        <p>{{ profile.location|default:"Add location" }}</p>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="{% url 'voice_assistant' %}" class="sidebar-link active"><i class="fas fa-microphone"></i> Voice AI</a>
+      <a href="{% url 'chat' %}" class="sidebar-link"><i class="fas fa-comments"></i> Chat</a>
+      <a href="{% url 'chat_history' %}" class="sidebar-link"><i class="fas fa-history"></i> History</a>
+      <a href="{% url 'profile' %}" class="sidebar-link"><i class="fas fa-user-cog"></i> Profile</a>
+    </nav>
+    <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <!-- Voice Main -->
+  <div class="app-main voice-main">
+    <div class="voice-header">
+      <h1><i class="fas fa-microphone-alt"></i> Voice Assistant</h1>
+      <p>Speak to KisanAI in your language — get instant expert farming advice</p>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="lang-selector-row">
+      <span class="lang-label">Language:</span>
+      <div class="lang-pills">
+        <button class="lang-pill {% if profile.preferred_language == 'en' %}active{% endif %}" data-lang="en" onclick="setLanguage('en')">
+          🇬🇧 English
+        </button>
+        <button class="lang-pill {% if profile.preferred_language == 'hi' %}active{% endif %}" data-lang="hi" onclick="setLanguage('hi')">
+          🇮🇳 हिंदी
+        </button>
+        <button class="lang-pill {% if profile.preferred_language == 'te' %}active{% endif %}" data-lang="te" onclick="setLanguage('te')">
+          🌿 తెలుగు
+        </button>
+      </div>
+      <button class="btn-clear-chat" onclick="clearConversation()" title="Clear chat">
+        <i class="fas fa-trash-alt"></i> Clear
+      </button>
+    </div>
+
+    <!-- Conversation Display -->
+    <div class="voice-conversation" id="voiceConversation">
+      <div class="voice-welcome">
+        <div class="welcome-icon">🌾</div>
+        <h2 id="welcomeText">నమస్కారం! నేను KisanAI. మీ వ్యవసాయ సమస్యలు అడగండి.</h2>
+        <p id="welcomeSub">Press the microphone button below or type your question</p>
+        <div class="sample-questions" id="sampleQuestions">
+          <span onclick="askSample(this.textContent)">How to control pests in rice?</span>
+          <span onclick="askSample(this.textContent)">Best fertilizer for cotton?</span>
+          <span onclick="askSample(this.textContent)">When to irrigate wheat?</span>
+          <span onclick="askSample(this.textContent)">Kharif crop suggestions</span>
+        </div>
+      </div>
+      <div id="messagesArea"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="voice-status-bar">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Ready — Press mic to speak</span>
+      </div>
+      <div class="voice-wave" id="voiceWave">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="voice-controls">
+      <!-- Text input -->
+      <div class="voice-text-input-row">
+        <input type="text" id="voiceTextInput" class="voice-text-input"
+               placeholder="Or type your question here..." />
+        <button onclick="sendTextMessage()" class="btn-send-text">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+
+      <!-- Big Mic Button -->
+      <div class="mic-section">
+        <div class="mic-rings-container" id="micRingsContainer">
+          <div class="pulse-ring ring-1"></div>
+          <div class="pulse-ring ring-2"></div>
+          <div class="pulse-ring ring-3"></div>
+          <button class="main-mic-btn" id="mainMicBtn" onclick="toggleListening()">
+            <i class="fas fa-microphone" id="micIcon"></i>
+          </button>
+        </div>
+        <p class="mic-hint" id="micHint">Tap to start speaking</p>
+      </div>
+
+      <!-- Volume/Speed controls -->
+      <div class="voice-settings-row">
+        <div class="voice-setting">
+          <label><i class="fas fa-volume-up"></i></label>
+          <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" class="slider" />
+        </div>
+        <div class="voice-setting">
+          <label><i class="fas fa-tachometer-alt"></i></label>
+          <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="0.9" class="slider" />
+        </div>
+        <button class="btn-icon-round" onclick="stopSpeaking()" title="Stop speaking">
+          <i class="fas fa-stop"></i>
+        </button>
+        <button class="btn-icon-round" onclick="replaySpeech()" title="Replay last response">
+          <i class="fas fa-redo"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const CSRF_TOKEN = '{{ csrf_token }}';
+  const SESSION_ID = {{ session.id }};
+  const USER_LANG = '{{ profile.preferred_language }}';
+</script>
+<script src="{% static 'js/voice.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Chat — KisanAI{% endblock %}
+{% block body_class %}app-page chat-page{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      <div class="user-avatar-big"><i class="fas fa-user-circle"></i></div>
+      <div class="user-info">
+        <h3>{{ user.username }}</h3>
+        <p>{{ profile.preferred_language|upper }} mode</p>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="{% url 'voice_assistant' %}" class="sidebar-link"><i class="fas fa-microphone"></i> Voice AI</a>
+      <a href="{% url 'chat' %}" class="sidebar-link active"><i class="fas fa-comments"></i> Chat</a>
+      <a href="{% url 'chat_history' %}" class="sidebar-link"><i class="fas fa-history"></i> History</a>
+      <a href="{% url 'profile' %}" class="sidebar-link"><i class="fas fa-user-cog"></i> Profile</a>
+    </nav>
+    <!-- Recent Sessions -->
+    <div class="sidebar-sessions">
+      <p class="sidebar-section-title">Recent Chats</p>
+      {% for s in all_sessions %}
+        <a href="{% url 'chat_session' s.id %}"
+           class="sidebar-session-item {% if s.id == session.id %}active-session{% endif %}">
+          <i class="fas fa-comment-dots"></i>
+          <span>{{ s.title|truncatechars:22 }}</span>
+        </a>
+      {% endfor %}
+      <a href="{% url 'chat' %}" class="btn-new-chat-sidebar">
+        <i class="fas fa-plus"></i> New Chat
+      </a>
+    </div>
+    <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <!-- Chat Main -->
+  <div class="app-main chat-main">
+    <div class="chat-topbar">
+      <div class="chat-topbar-left">
+        <h2><i class="fas fa-robot"></i> KisanAI Chat</h2>
+        <span class="chat-session-title" id="chatSessionTitle">{{ session.title }}</span>
+      </div>
+      <div class="chat-topbar-right">
+        <select id="chatLang" class="lang-select" onchange="updateLanguage(this.value)">
+          <option value="en" {% if profile.preferred_language == 'en' %}selected{% endif %}>🇬🇧 English</option>
+          <option value="hi" {% if profile.preferred_language == 'hi' %}selected{% endif %}>🇮🇳 हिंदी</option>
+          <option value="te" {% if profile.preferred_language == 'te' %}selected{% endif %}>🌿 తెలుగు</option>
+        </select>
+        <button onclick="speakToggle()" class="btn-icon-round" title="Toggle voice output" id="speakToggleBtn">
+          <i class="fas fa-volume-up"></i>
+        </button>
+        <a href="{% url 'voice_assistant' %}" class="btn-icon-round" title="Switch to voice mode">
+          <i class="fas fa-microphone"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages-area" id="chatMessages">
+      {% if not chat_messages %}
+        <div class="chat-welcome">
+          <div class="chat-welcome-icon">🌾</div>
+          <h3>Hello, {{ user.username }}!</h3>
+          <p>I'm KisanAI, your agricultural expert. Ask me anything about farming!</p>
+          <div class="sample-q-grid">
+            <div class="sample-q" onclick="sendSample(this.textContent)">🌾 Best crops for Kharif season?</div>
+            <div class="sample-q" onclick="sendSample(this.textContent)">🐛 How to identify and treat stem borer?</div>
+            <div class="sample-q" onclick="sendSample(this.textContent)">💧 Drip irrigation setup for vegetables</div>
+            <div class="sample-q" onclick="sendSample(this.textContent)">🌱 Organic fertilizer for rice paddy</div>
+            <div class="sample-q" onclick="sendSample(this.textContent)">📊 How to get soil tested for free?</div>
+            <div class="sample-q" onclick="sendSample(this.textContent)">🌦️ What to do before heavy rains?</div>
+          </div>
+        </div>
+      {% else %}
+        {% for msg in chat_messages %}
+          <div class="chat-msg {% if msg.role == 'user' %}user-msg{% else %}ai-msg{% endif %}">
+            <div class="msg-avatar">
+              {% if msg.role == 'user' %}
+                <i class="fas fa-user"></i>
+              {% else %}
+                <span>🌾</span>
+              {% endif %}
+            </div>
+            <div class="msg-bubble">
+              <div class="msg-content">{{ msg.content|linebreaksbr }}</div>
+              <div class="msg-meta">
+                <span class="msg-time">{{ msg.created_at|date:"h:i A" }}</span>
+                {% if msg.input_type == 'voice' %}<span class="msg-voice-tag"><i class="fas fa-microphone-alt"></i></span>{% endif %}
+                {% if msg.role == 'assistant' %}
+                  <button class="msg-speak-btn" onclick="speakText(`{{ msg.content|escapejs }}`)" title="Listen">
+                    <i class="fas fa-volume-up"></i>
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing-indicator" id="typingIndicator" style="display:none">
+      <div class="typing-avatar">🌾</div>
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <button class="btn-voice-in-chat" id="voiceInChatBtn" onclick="toggleVoiceInChat()" title="Voice input">
+          <i class="fas fa-microphone" id="voiceChatIcon"></i>
+        </button>
+        <textarea id="chatInput" class="chat-textarea" placeholder="Ask about crops, pests, fertilizers..."
+                  rows="1" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+        <button onclick="sendChatMessage()" class="btn-chat-send" id="sendBtn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <div class="chat-input-hints">
+        <span>Enter to send · Shift+Enter for new line · <i class="fas fa-microphone-alt"></i> for voice</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const SESSION_ID = {{ session.id }};
+const USER_LANG = '{{ profile.preferred_language }}';
+</script>
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

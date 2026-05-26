@@ -1,0 +1,215 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Dashboard — KisanAI{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      <div class="user-avatar-big"><i class="fas fa-user-circle"></i></div>
+      <div class="user-info">
+        <h3>{{ user.username }}</h3>
+        <p>{{ profile.location|default:"Location not set" }}</p>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" class="sidebar-link active"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="{% url 'voice_assistant' %}" class="sidebar-link"><i class="fas fa-microphone"></i> Voice AI</a>
+      <a href="{% url 'chat' %}" class="sidebar-link"><i class="fas fa-comments"></i> Chat</a>
+      <a href="{% url 'chat_history' %}" class="sidebar-link"><i class="fas fa-history"></i> History</a>
+      <a href="{% url 'profile' %}" class="sidebar-link"><i class="fas fa-user-cog"></i> Profile</a>
+    </nav>
+    <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <!-- Main -->
+  <div class="app-main">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h1>Good day, <span class="green">{{ user.username }}</span>! 👋</h1>
+        <p>Here's your farming overview for today.</p>
+      </div>
+      <div class="welcome-actions">
+        <a href="{% url 'voice_assistant' %}" class="btn-voice-start">
+          <i class="fas fa-microphone"></i> Start Voice Chat
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-comments"></i></div>
+        <div class="stat-info">
+          <h3>{{ recent_messages }}</h3>
+          <p>Messages (7 days)</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-history"></i></div>
+        <div class="stat-info">
+          <h3>{{ total_sessions }}</h3>
+          <p>Conversations</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow"><i class="fas fa-seedling"></i></div>
+        <div class="stat-info">
+          <h3>{{ profile.get_crops_list|length }}</h3>
+          <p>Tracked Crops</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple" id="tempStat">
+          <i class="fas fa-cloud-sun"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="dashTemp">--°C</h3>
+          <p id="dashWeatherDesc">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid: Daily Tip + Weather + Quick Chat -->
+    <div class="dashboard-grid">
+
+      <!-- Daily Tip -->
+      <div class="dash-card tip-card">
+        <div class="card-header">
+          <h2><i class="fas fa-lightbulb"></i> Daily Farming Tip</h2>
+          <button class="refresh-btn" onclick="refreshTip()" title="New tip"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div class="tip-content" id="dailyTip">
+          <p>{{ daily_tip }}</p>
+        </div>
+      </div>
+
+      <!-- Weather Card -->
+      <div class="dash-card weather-card">
+        <div class="card-header">
+          <h2><i class="fas fa-cloud-sun-rain"></i> Weather</h2>
+          <span class="weather-location-badge" id="weatherBadge">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ profile.location|default:"Enter location" }}</span>
+          </span>
+        </div>
+        <div class="weather-search">
+          <input type="text" id="weatherInput" class="form-input" placeholder="Search city..." value="{{ profile.location }}" />
+          <button onclick="loadWeather()" class="btn-weather-search"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="weatherDisplay" class="weather-display">
+          <div class="weather-loading"><i class="fas fa-spinner fa-spin"></i> Loading weather...</div>
+        </div>
+      </div>
+
+      <!-- Quick Chat -->
+      <div class="dash-card quick-chat-card">
+        <div class="card-header">
+          <h2><i class="fas fa-robot"></i> Quick Chat</h2>
+          <a href="{% url 'chat' %}" class="card-link">Full Chat →</a>
+        </div>
+        <div class="quick-chat-messages" id="quickMessages">
+          <div class="chat-bubble assistant-bubble">
+            <span>🌾 Hello! Ask me anything about farming — crops, pests, fertilizers, or weather!</span>
+          </div>
+        </div>
+        <div class="quick-chat-input">
+          <select id="quickLang" class="lang-select-mini">
+            <option value="en" {% if profile.preferred_language == 'en' %}selected{% endif %}>EN</option>
+            <option value="hi" {% if profile.preferred_language == 'hi' %}selected{% endif %}>HI</option>
+            <option value="te" {% if profile.preferred_language == 'te' %}selected{% endif %}>TE</option>
+          </select>
+          <input type="text" id="quickInput" class="form-input" placeholder="Ask a farming question..." />
+          <button onclick="sendQuickChat()" class="btn-quick-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+
+      <!-- Voice Shortcut -->
+      <div class="dash-card voice-shortcut-card">
+        <div class="card-header">
+          <h2><i class="fas fa-microphone"></i> Voice Assistant</h2>
+        </div>
+        <div class="voice-shortcut-content">
+          <p>Press the mic and speak in Telugu, Hindi, or English for instant farming advice.</p>
+          <a href="{% url 'voice_assistant' %}" class="btn-big-voice">
+            <div class="big-mic-btn">
+              <i class="fas fa-microphone"></i>
+            </div>
+            <span>Tap to Start</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Sessions -->
+      <div class="dash-card sessions-card">
+        <div class="card-header">
+          <h2><i class="fas fa-history"></i> Recent Chats</h2>
+          <a href="{% url 'chat_history' %}" class="card-link">View all →</a>
+        </div>
+        {% if sessions %}
+          <div class="sessions-list">
+            {% for session in sessions %}
+            <a href="{% url 'chat_session' session.id %}" class="session-item">
+              <div class="session-icon"><i class="fas fa-comment-alt"></i></div>
+              <div class="session-info">
+                <h4>{{ session.title|truncatechars:40 }}</h4>
+                <span>{{ session.updated_at|timesince }} ago</span>
+              </div>
+              <i class="fas fa-chevron-right session-arrow"></i>
+            </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <p>No conversations yet. Start chatting!</p>
+            <a href="{% url 'chat' %}" class="btn-sm-green">Start Chat</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Crops Profile -->
+      <div class="dash-card crops-card">
+        <div class="card-header">
+          <h2><i class="fas fa-seedling"></i> Your Crops</h2>
+          <a href="{% url 'profile' %}" class="card-link">Edit →</a>
+        </div>
+        {% if profile.get_crops_list %}
+          <div class="crops-chips">
+            {% for crop in profile.get_crops_list %}
+              <span class="crop-chip">{{ crop }}</span>
+            {% endfor %}
+          </div>
+          <p class="crops-area">
+            {% if profile.land_area %}
+            <i class="fas fa-expand-arrows-alt"></i> {{ profile.land_area }} acres
+            {% endif %}
+            {% if profile.state %}
+            <i class="fas fa-map-marker-alt"></i> {{ profile.state }}
+            {% endif %}
+          </p>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-seedling"></i>
+            <p>Add your crops for better advice!</p>
+            <a href="{% url 'profile' %}" class="btn-sm-green">Update Profile</a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const USER_LANG = '{{ profile.preferred_language }}';
+const USER_LOCATION = '{{ profile.location }}';
+</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

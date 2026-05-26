@@ -1,0 +1,27 @@
+# ─────────────────────────────────────────────────────────
+#  KisanAI — Python Dependencies
+# ─────────────────────────────────────────────────────────
+
+# Core Django
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# WSGI + Static Files
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# AI Integration
+google-generativeai==0.3.2
+
+# HTTP requests (weather API)
+requests==2.31.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Images
+Pillow==10.1.0
+
+# Text-to-speech (server-side, optional)
+gTTS==2.4.0

@@ -1,0 +1,70 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Chat History — KisanAI{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      <div class="user-avatar-big"><i class="fas fa-user-circle"></i></div>
+      <div class="user-info"><h3>{{ user.username }}</h3></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}" class="sidebar-link"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="{% url 'voice_assistant' %}" class="sidebar-link"><i class="fas fa-microphone"></i> Voice AI</a>
+      <a href="{% url 'chat' %}" class="sidebar-link"><i class="fas fa-comments"></i> Chat</a>
+      <a href="{% url 'chat_history' %}" class="sidebar-link active"><i class="fas fa-history"></i> History</a>
+      <a href="{% url 'profile' %}" class="sidebar-link"><i class="fas fa-user-cog"></i> Profile</a>
+    </nav>
+    <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <div class="app-main">
+    <div class="page-header">
+      <h1><i class="fas fa-history"></i> Chat History</h1>
+      <a href="{% url 'chat' %}" class="btn-new-chat"><i class="fas fa-plus"></i> New Chat</a>
+    </div>
+
+    {% if sessions %}
+      <div class="history-grid">
+        {% for session in sessions %}
+          <div class="history-card">
+            <div class="history-card-header">
+              <div class="history-icon"><i class="fas fa-comment-alt"></i></div>
+              <div class="history-meta">
+                <h3>{{ session.title|truncatechars:50 }}</h3>
+                <span>{{ session.updated_at|date:"d M Y, h:i A" }}</span>
+              </div>
+            </div>
+            <div class="history-card-footer">
+              <span class="history-lang lang-badge-{{ session.language }}">
+                {{ session.language|upper }}
+              </span>
+              <div class="history-actions">
+                <a href="{% url 'chat_session' session.id %}" class="btn-history-open">
+                  <i class="fas fa-external-link-alt"></i> Open
+                </a>
+                <a href="{% url 'delete_session' session.id %}"
+                   onclick="return confirm('Delete this conversation?')"
+                   class="btn-history-delete">
+                  <i class="fas fa-trash-alt"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-page-state">
+        <div class="empty-icon"><i class="fas fa-comments"></i></div>
+        <h2>No conversations yet</h2>
+        <p>Start chatting with KisanAI to get farming advice!</p>
+        <a href="{% url 'chat' %}" class="btn-primary-hero">
+          <i class="fas fa-comment"></i> Start First Chat
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
